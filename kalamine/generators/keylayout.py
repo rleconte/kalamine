@@ -110,6 +110,9 @@ def macos_actions(layout: "KeyboardLayout") -> List[str]:
         if name == "1dk" and term in layout.dead_keys:
             nested_dk = DK_INDEX[term].name
             ret_actions.append(f'  <when state="1dk" next="{nested_dk}" />')
+        else:
+            # Handle pressing dead key twice: output terminator and return to none state
+            ret_actions.append(f'  <when state="{name}" output="{_xml_proof(term)}" />')
         ret_actions.append("</action>")
         continue
 
