@@ -66,6 +66,10 @@ def macos_keymap(layout: "KeyboardLayout") -> List[List[str]]:
                     symbol = _xml_proof(key.upper() if caps else key)
                     final_key = not has_dead_keys(key.upper())
 
+            # Space bar always needs actions to handle dead key states
+            if key_name == "spce":
+                final_key = False
+
             char = f"code=\"{SCAN_CODES['osx'][key_name]}\"".ljust(10)
             if final_key:
                 action = f'output="{symbol}"'
@@ -146,6 +150,24 @@ def macos_actions(layout: "KeyboardLayout") -> List[str]:
     append_actions("spce", "&#x0020;", actions)  # space
     append_actions("spce", "&#x00a0;", actions)  # no-break space
     append_actions("spce", "&#x202f;", actions)  # fine no-break space
+
+    # Custom spacebar characters (non-space types)
+    space_chars = {" ", "\u00a0", "\u202f"}
+    for i in [Layer.SHIFT, Layer.ALTGR, Layer.ALTGR_SHIFT]:
+        if "spce" in layout.layers[i]:
+            char = layout.layers[i]["spce"]
+            if char not in space_chars:
+                custom_actions: list[tuple[str, str]] = []
+                for k in DK_INDEX:
+                    if k in layout.dead_keys:
+                        # Check if this char has a dead key transformation
+                        if char in layout.dead_keys[k]:
+                            custom_actions.append((DK_INDEX[k].name, layout.dead_keys[k][char]))
+                        else:
+                            # No transformation: output char and cancel dead key
+                            custom_actions.append((DK_INDEX[k].name, char))
+                append_actions("spce", _xml_proof(char), custom_actions)
+                space_chars.add(char)  # Avoid duplicates
 
     return ret_actions
 
